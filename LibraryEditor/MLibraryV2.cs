@@ -13,7 +13,8 @@ namespace LibraryEditor
 {
     public sealed class MLibraryV2
     {
-        public const int LibVersion = 2;
+        public const int LibVersion = 3;
+        public int CurrentVersion;
         public static bool Load = true;
         public string FileName;
 
@@ -27,6 +28,7 @@ namespace LibraryEditor
 
         public MLibraryV2(string filename)
         {
+            //colormap
             FileName = filename;
             Initialize();
             Close();
@@ -34,7 +36,6 @@ namespace LibraryEditor
 
         public void Initialize()
         {
-            int CurrentVersion;
             _initialized = true;
 
             if (!File.Exists(FileName))
@@ -43,9 +44,9 @@ namespace LibraryEditor
             _stream = new FileStream(FileName, FileMode.Open, FileAccess.ReadWrite);
             _reader = new BinaryReader(_stream);
             CurrentVersion = _reader.ReadInt32();
-            if (CurrentVersion != LibVersion)
+            if (CurrentVersion < 2)
             {
-                MessageBox.Show("Wrong version, expecting lib version: " + LibVersion.ToString() + " found version: " + CurrentVersion.ToString() + ".", "Failed to open", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
+                MessageBox.Show("Wrong version, expecting lib version: " + 2 + " found version: " + CurrentVersion.ToString() + ".", "Failed to open", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
                 return;
             }
             Count = _reader.ReadInt32();
@@ -84,7 +85,7 @@ namespace LibraryEditor
             for (int i = 0; i < Count; i++)
             {
                 IndexList.Add((int)stream.Length + offSet);
-                Images[i].Save(writer);
+                Images[i].Save(writer, CurrentVersion);
                 //Images[i] = null;
             }
 
@@ -117,7 +118,7 @@ namespace LibraryEditor
             if (Images[index] == null)
             {
                 _stream.Position = IndexList[index];
-                Images[index] = new MImage(_reader);
+                Images[index] = new MImage(_reader, CurrentVersion);
             }
 
             if (!Load) return;
@@ -126,7 +127,7 @@ namespace LibraryEditor
             if (!mi.TextureValid)
             {
                 _stream.Seek(IndexList[index] + 12, SeekOrigin.Begin);
-                mi.CreateTexture(_reader);
+                mi.CreateTexture(/*_reader*/);
             }
         }
 
@@ -141,7 +142,7 @@ namespace LibraryEditor
             if (Images[index] == null)
             {
                 _stream.Seek(IndexList[index], SeekOrigin.Begin);
-                Images[index] = new MImage(_reader);
+                Images[index] = new MImage(_reader, CurrentVersion);
             }
 
             return new Point(Images[index].X, Images[index].Y);
@@ -157,7 +158,7 @@ namespace LibraryEditor
             if (Images[index] == null)
             {
                 _stream.Seek(IndexList[index], SeekOrigin.Begin);
-                Images[index] = new MImage(_reader);
+                Images[index] = new MImage(_reader, CurrentVersion);
             }
 
             return new Size(Images[index].Width, Images[index].Height);
@@ -248,6 +249,196 @@ namespace LibraryEditor
             }
         }
 
+        public void GenerateLightMasks()
+        {
+            if (!_initialized) return;
+            if (Images == null) return;
+            CurrentVersion = 3;
+            for (int i = 0; i < Images.Count; i++)
+            {
+                //CheckImage(i);
+                Images[i].GetLightImage();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+        }
+
+        public class LightMask
+        {
+            public Bitmap OriginalImage;
+            public Bitmap Image;
+            public Pixel[] Colors;
+            public static int StartSize = 60;
+            public int OffsetX, OffsetY;
+
+            public LightMask(Bitmap Original)
+            {
+                if (Original == null) return;//will cause crashes :p
+                OffsetX = StartSize * -1;
+                OffsetY = StartSize * -1;
+                OriginalImage = MakeGrayscale(Original);
+                FillPixels();
+                Bleed();
+                CreateNewImage();
+                for (int i = 0; i < Colors.Length; i++)
+                    Colors[i] = null;
+                Colors = null;
+            }
+
+            public unsafe void FillPixels()
+            {
+                int Width = OriginalImage.Width;
+                int Height = OriginalImage.Height;
+                Colors = new Pixel[Width * Height];
+                BitmapData data = OriginalImage.LockBits(new Rectangle(0, 0, Width,Height), ImageLockMode.ReadOnly,
+                                                 PixelFormat.Format32bppArgb);
+
+                byte[] pixels = new byte[Width * Height * 4];
+                
+                Marshal.Copy(data.Scan0, pixels, 0, pixels.Length);
+
+                OriginalImage.UnlockBits(data);
+
+                int index = 0;
+                for (int i = 0; i < pixels.Length; i += 4)
+                {
+                    index = i / 4;
+                    Colors[index] = new Pixel();
+                    Colors[index].OriginalColor = pixels[i];
+                    Colors[index].NewColor = pixels[i];
+                }
+
+            }
+
+            byte BrightestColor = 0;
+            public void Bleed()
+            {                
+                for (int i = 0; i < Colors.Length; i++)
+                {
+                    Colors[i].Processed = false;
+                    if (BrightestColor < Colors[i].OriginalColor)
+                        BrightestColor = Colors[i].OriginalColor;
+                }
+                for (int i = BrightestColor; i > 1/*testing*/; i--)
+                {
+                    BrightestColor = (byte)i;
+                    for (int j = 0; j < Colors.Length; j++)
+                    {
+                        if (Colors[j].Processed) continue;
+                        if (Colors[j].NewColor == i)
+                        {
+                            BleedPixel(j);
+                            Colors[j].Processed = true;
+                        }
+                    }
+                }
+
+            }
+
+            public void BleedPixel(int index)
+            {
+                int origx, origy, x, y;
+                origx = index % OriginalImage.Width;
+                origy = index / OriginalImage.Width;
+                int newindex;
+                for (int i = 0; i < 9; i++)
+                {
+                    x = (origx - 1) + (int)(i % 3);
+                    y = (origy -1) + (int)(i / 3);
+                    newindex = (y * OriginalImage.Width) + x;
+                    if (((x == origx) && (y == origy)) || (x < 0) || (y < 0) || (x > OriginalImage.Width-1) || (y > OriginalImage.Height -1)) continue;
+                    if ((Colors[newindex].Processed) || (Colors[newindex].NewColor == BrightestColor)) continue;
+                    Colors[newindex].NewColor = GetNewcolor(Colors[newindex].NewColor, Colors[index].NewColor, 2-(i % 2));
+
+                }
+            }
+
+            public byte GetNewcolor(byte OriginalColor, byte Neighbourcolor, int distance)
+            {
+                if ((distance == 2) && OriginalColor == BrightestColor - 2) return (byte)Math.Max(0, (int)BrightestColor - 1);
+                float Reduction = 0.25f;
+                //if ((OriginalColor == 0) && (Neighbourcolor < 100))
+                //    Reduction = 0.15f;
+                return (byte)(Math.Min((int)Math.Max(0,(BrightestColor - distance)),OriginalColor + (int)(Neighbourcolor * (Reduction * (3 - distance)) /*- 1*/)));
+                //return (byte)(Math.Min((int)Math.Max(0, (BrightestColor - 1)), OriginalColor + (int)(Neighbourcolor * (0.5))));
+            }
+
+            public unsafe void CreateNewImage()
+            {
+                /*//orig
+                byte[] pixels = new byte[OriginalImage.Width * OriginalImage.Height * 4];
+                byte Color;
+                for (int i = 0; i < Colors.Length;i++)
+                {
+                    Color = Colors[i].OriginalColor != 0 ? (byte)255 : Colors[i].NewColor;
+                    pixels[i * 4] = Color;
+                    pixels[i * 4 + 1] = Color;
+                    pixels[i * 4 + 2] = Color;
+                    pixels[i * 4 + 3] = (byte)(Color != 0? 255: 0);//probably should make alpha layer better :p
+                }
+                //*/
+                //test code
+                byte[] pixels = new byte[OriginalImage.Width * OriginalImage.Height];
+                for (int i = 0; i < Colors.Length;i++)
+                    pixels[i] = Colors[i].OriginalColor > 100? (byte)255:  Colors[i].NewColor;
+                //*/
+                Image = new Bitmap(OriginalImage.Width, OriginalImage.Height, PixelFormat.Format8bppIndexed);
+                //Image = OriginalImage;
+
+                BitmapData data = Image.LockBits(new Rectangle(0, 0, OriginalImage.Width, OriginalImage.Height), ImageLockMode.ReadWrite,
+                                                 PixelFormat.Format8bppIndexed/*.Format32bppArgb*/);
+
+
+                Marshal.Copy(pixels, 0, data.Scan0, pixels.Length);
+
+                Image.UnlockBits(data);
+            }
+
+            public static Bitmap MakeGrayscale(Bitmap original)
+            {
+                if (original == null) return null;
+                //create a blank bitmap the same size as original
+                //original code
+                Bitmap newBitmap = new Bitmap(original.Width + (StartSize * 2), original.Height + (StartSize * 2));
+               //get a graphics object from the new image
+                Graphics g = Graphics.FromImage(newBitmap);
+
+               //create the grayscale ColorMatrix
+                ColorMatrix colorMatrix = new ColorMatrix(
+                new float[][] 
+                {
+                    new float[] {.3f, .3f, .3f, 0, 0},//0.3f
+                    new float[] {.59f, .59f, .59f, 0, 0},//0.59f
+                    new float[] {.11f, .11f, .11f, 0, 0},//0.11f
+                    new float[] {0, 0, 0, 1, 0},
+                    new float[] {0, 0, 0, 0, 1}
+                    
+                });
+
+                //create some image attributes
+                ImageAttributes attributes = new ImageAttributes();
+
+                //set the color matrix attribute
+                attributes.SetColorMatrix(colorMatrix);
+
+                //draw the original image on the new image
+                //using the grayscale color matrix
+                g.DrawImage(original, new Rectangle(StartSize * 1, StartSize * 1, original.Width, original.Height),
+                    0, 0, original.Width, original.Height, GraphicsUnit.Pixel, attributes);
+
+               //dispose the Graphics object
+                g.Dispose();
+                return newBitmap;
+            }
+
+        }
+
+        public class Pixel
+        {
+            public byte OriginalColor,NewColor;
+            public bool Processed = false;
+        }
+
         public sealed class MImage
         {
             public short Width, Height, X, Y, ShadowX, ShadowY;
@@ -265,7 +456,15 @@ namespace LibraryEditor
             public Bitmap MaskImage;
             public Boolean HasMask;
 
-            public MImage(BinaryReader reader)
+            //layer 3:
+            private Bitmap LightImage;
+            public int LightLength;
+            public short LightWidth, LightHeight, LightX, LightY;
+            public byte[] LightFBytes;
+            public Boolean HasLight;
+            Color LightColor;
+
+            public MImage(BinaryReader reader, int CurrentVersion)
             {
                 //read layer 1
                 Width = reader.ReadInt16();
@@ -275,10 +474,13 @@ namespace LibraryEditor
                 ShadowX = reader.ReadInt16();
                 ShadowY = reader.ReadInt16();
                 Shadow = reader.ReadByte();
+                if (CurrentVersion >= 3)
+                    HasLight = reader.ReadBoolean();
                 Length = reader.ReadInt32();
                 FBytes = reader.ReadBytes(Length);
                 //check if there's a second layer and read it
                 HasMask = ((Shadow >> 7) == 1) ? true : false;
+                
                 if (HasMask)
                 {
                     MaskWidth = reader.ReadInt16();
@@ -287,6 +489,19 @@ namespace LibraryEditor
                     MaskY = reader.ReadInt16();
                     MaskLength = reader.ReadInt32();
                     MaskFBytes = reader.ReadBytes(MaskLength);
+                }
+                if (CurrentVersion >= 3)
+                {
+                    if (HasLight)
+                    {
+                        LightColor = Color.FromArgb(reader.ReadInt32());
+                        LightWidth = reader.ReadInt16();
+                        LightHeight = reader.ReadInt16();
+                        LightX = reader.ReadInt16();
+                        LightY = reader.ReadInt16();
+                        LightLength = reader.ReadInt32();
+                        LightFBytes = reader.ReadBytes(LightLength);
+                    }
                 }
             }
 
@@ -358,6 +573,46 @@ namespace LibraryEditor
                 return input;
             }
 
+            private unsafe Color AverageColorFromTexture()
+            {
+                if (Image == null) return Color.White;
+                BitmapData data = Image.LockBits(new Rectangle(0, 0, Image.Width, Image.Height), ImageLockMode.ReadOnly,
+                                                 PixelFormat.Format32bppArgb);
+
+                byte[] pixels = new byte[Image.Width * Image.Height*4];
+
+                Marshal.Copy(data.Scan0, pixels, 0, pixels.Length);
+
+                Image.UnlockBits(data);
+
+
+                if (pixels.Length == 0) return Color.White;
+                int red = 0, green = 0, blue = 0;
+                bool foundcolor = false;
+                int count = 0;
+                for (int i = 0; i < (Width * Height * 4); i += 4)
+                {
+                    if (pixels[i + 3] == 0) continue;
+                    if ((pixels[i] == 0) && (pixels[i] == 0) && (pixels[i] == 0)) continue;
+                    if (!foundcolor)
+                    {
+                        foundcolor = true;
+                        red = pixels[i + 2];
+                        green = pixels[i + 1];
+                        blue = pixels[i];
+                        count++;
+                        continue;
+                    }
+                    red += pixels[i + 2];
+                    green += pixels[i + 1];
+                    blue += pixels[i];
+                    count++;
+                }
+                if (count == 0) return Color.White;
+                return Color.FromArgb(255, Convert.ToInt32(red / count), (int)(green / count), (int)(blue / count));
+            }
+
+
             private unsafe byte[] ConvertBitmapToArray(Bitmap input)
             {
                 BitmapData data = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly,
@@ -381,7 +636,24 @@ namespace LibraryEditor
                 return compressedBytes;
             }
 
-            public unsafe void CreateTexture(BinaryReader reader)
+            private unsafe byte[] ConvertBitmapTo8bitArray(Bitmap input)
+            {
+                BitmapData data = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly,
+                                                 PixelFormat.Format8bppIndexed);
+
+                byte[] pixels = new byte[input.Width * input.Height];
+
+                Marshal.Copy(data.Scan0, pixels, 0, pixels.Length);
+
+                input.UnlockBits(data);
+                byte[] compressedBytes;
+                compressedBytes = Compress(pixels);
+
+                return compressedBytes;
+            }
+
+
+            public unsafe void CreateTexture(/*BinaryReader reader*/)
             {
                 int w = Width;// +(4 - Width % 4) % 4;
                 int h = Height;// +(4 - Height % 4) % 4;
@@ -400,12 +672,6 @@ namespace LibraryEditor
 
                 Image.UnlockBits(data);
 
-                //if (Image.Width > 0 && Image.Height > 0)
-                //{
-                //    Guid id = Guid.NewGuid();
-                //    Image.Save(id + ".bmp", ImageFormat.Bmp);
-                //}
-
                 dest = null;
 
                 if (HasMask)
@@ -417,6 +683,7 @@ namespace LibraryEditor
                     {
                         return;
                     }
+                    if ((w < 2) || (h < 2)) return;
 
                     try
                     {
@@ -437,12 +704,44 @@ namespace LibraryEditor
                                        string.Format("[{0}] {1}{2}", DateTime.Now, ex, Environment.NewLine));
                     }
                 }
+                if (HasLight)
+                {
+                    w = LightWidth;
+                    h = LightHeight;
+                    if (w == 0 || h == 0) return;
+                    if ((w < 2) || (h < 2)) return;
 
+                    try
+                    {
+                        LightImage = new Bitmap(w, h, PixelFormat.Format8bppIndexed);
+                        GetGrayScalePalette();
+                        data = LightImage.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadWrite, PixelFormat.Format8bppIndexed);
+                        dest = Decompress(LightFBytes);
+                        Marshal.Copy(dest, 0, data.Scan0, dest.Length);
+                        LightImage.UnlockBits(data);
+                    }
+                    catch(Exception ex)
+                    {
+
+                    }
+                }
                 dest = null;
             }
 
+            private void GetGrayScalePalette()
+            {
+                ColorPalette palette = LightImage.Palette;
+                Color[] _entries = palette.Entries;
+                for (int i = 0; i < 256; i++)
+                {
+                    Color b = new Color();
+                    b = Color.FromArgb((byte)i, (byte)i, (byte)i);
+                    _entries[i] = b;
+                }
+                LightImage.Palette = palette;
+            }
 
-            public void Save(BinaryWriter writer)
+            public void Save(BinaryWriter writer, int CurrentVersion)
             {
                 writer.Write(Width);
                 writer.Write(Height);
@@ -451,6 +750,9 @@ namespace LibraryEditor
                 writer.Write(ShadowX);
                 writer.Write(ShadowY);
                 writer.Write(HasMask ? (byte)(Shadow | 0x80) : (byte)Shadow);
+                bool HasLight = LightImage != null;
+                if (CurrentVersion > 2)                 
+                    writer.Write(HasLight);
                 writer.Write(FBytes.Length);
                 writer.Write(FBytes);
                 if (HasMask)
@@ -461,6 +763,21 @@ namespace LibraryEditor
                     writer.Write(MaskY);
                     writer.Write(MaskFBytes.Length);
                     writer.Write(MaskFBytes);
+                }
+                if (CurrentVersion > 2)
+                {
+                    if (HasLight)
+                    {
+                        writer.Write(LightColor.ToArgb());
+                        writer.Write(LightWidth);
+                        writer.Write(LightHeight);
+                        writer.Write(LightX);
+                        writer.Write(LightY);
+                        LightFBytes = ConvertBitmapTo8bitArray(LightImage);
+                        writer.Write(LightFBytes.Length);
+                        writer.Write(LightFBytes);//could reduce filesize by saving the lightmask instead of the lightimage bytes> but compression will do pretty much the same really)
+                        LightFBytes = null;
+                    }
                 }
             }
 
@@ -522,6 +839,34 @@ namespace LibraryEditor
 
                     g.Save();
                 }
+            }
+
+            public Bitmap GetLightImage()
+            {
+                if (LightImage == null)
+                {
+                    LightMask Mask = new LightMask(Image);
+                    LightImage = Mask.Image;
+                    if (LightImage != null)
+                    {
+                        LightWidth = (short)Mask.Image.Width;
+                        LightHeight = (short)Mask.Image.Height;
+                        LightColor = AverageColorFromTexture();
+                        LightX = (short)(Mask.OffsetX + X);
+                        LightY = (short)(Mask.OffsetY + Y);
+                        //LightFBytes = ConvertBitmapToArray(Mask.Image);
+                    }
+                    else
+                    {
+                        LightWidth = 0;
+                        LightHeight = 0;
+                        LightFBytes = new byte[0];
+                        LightColor = Color.White;
+                    }
+                    Mask = null;
+                }
+                
+                return LightImage;
             }
         }
     }

@@ -458,6 +458,7 @@ namespace Client.MirGraphics
     {
         private const string Extention = ".Lib";
         public const int LibVersion = 2;
+        public int CurrentVersion = 0;
 
         private readonly string _fileName;
 
@@ -476,7 +477,7 @@ namespace Client.MirGraphics
 
         public void Initialize()
         {
-            int CurrentVersion = 0;
+            CurrentVersion = 0;
             _initialized = true;
 
             if (!File.Exists(_fileName))
@@ -487,7 +488,7 @@ namespace Client.MirGraphics
                 _fStream = new FileStream(_fileName, FileMode.Open, FileAccess.Read);
                 _reader = new BinaryReader(_fStream);
                 CurrentVersion = _reader.ReadInt32();
-                if (CurrentVersion != LibVersion)
+                if (CurrentVersion < LibVersion)
                 {
                     //cant use a directx based error popup cause it could be the lib file containing the interface is invalid :(
                     System.Windows.Forms.MessageBox.Show("Wrong version, expecting lib version: " + LibVersion.ToString() + " found version: " + CurrentVersion.ToString() + ".", _fileName, System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error, System.Windows.Forms.MessageBoxDefaultButton.Button1);
@@ -520,14 +521,14 @@ namespace Client.MirGraphics
             if (_images[index] == null)
             {
                 _fStream.Position = _indexList[index];
-                _images[index] = new MImage(_reader);
+                _images[index] = new MImage(_reader, CurrentVersion);
             }
             MImage mi = _images[index];
             if (!mi.TextureValid)
             {
                 if ((mi.Width == 0) || (mi.Height == 0))
                     return false;
-                _fStream.Seek(_indexList[index] + 17, SeekOrigin.Begin);
+                _fStream.Seek(_indexList[index] + (CurrentVersion == 2 ? 17 : 18), SeekOrigin.Begin);
                 mi.CreateTexture(_reader);
             }
 
@@ -544,7 +545,7 @@ namespace Client.MirGraphics
             if (_images[index] == null)
             {
                 _fStream.Seek(_indexList[index], SeekOrigin.Begin);
-                _images[index] = new MImage(_reader);
+                _images[index] = new MImage(_reader, CurrentVersion);
             }
 
             return new Point(_images[index].X, _images[index].Y);
@@ -558,7 +559,7 @@ namespace Client.MirGraphics
             if (_images[index] == null)
             {
                 _fStream.Seek(_indexList[index], SeekOrigin.Begin);
-                _images[index] = new MImage(_reader);
+                _images[index] = new MImage(_reader, CurrentVersion);
             }
 
             return new Size(_images[index].Width, _images[index].Height);
@@ -574,7 +575,7 @@ namespace Client.MirGraphics
             if (_images[index] == null)
             {
                 _fStream.Position = _indexList[index];
-                _images[index] = new MImage(_reader);
+                _images[index] = new MImage(_reader, CurrentVersion);
             }
             MImage mi = _images[index];
             if (mi.TrueSize.IsEmpty)
@@ -584,7 +585,7 @@ namespace Client.MirGraphics
                     if ((mi.Width == 0) || (mi.Height == 0))
                         return Size.Empty;
 
-                    _fStream.Seek(_indexList[index] + 17, SeekOrigin.Begin);
+                    _fStream.Seek(_indexList[index] + (CurrentVersion == 2? 17: 18), SeekOrigin.Begin);
                     mi.CreateTexture(_reader);
                 }
                 return mi.GetTrueSize();
@@ -787,6 +788,44 @@ namespace Client.MirGraphics
             mi.CleanTime = CMain.Time + Settings.CleanDelay;
         }
 
+        public void DrawLightBlend(int index, Point point, Color colour, bool offSet = false, float rate = 1)
+        {
+            if (!CheckImage(index))
+                return;
+
+            MImage mi = _images[index];
+            Texture Image = mi.HasLight ? mi.LightImage : mi.Image;
+            if (offSet) point.Offset(mi.HasLight ? mi.LightX : mi.X, mi.HasLight ? mi.LightY : mi.Y);
+
+            if (point.X >= Settings.ScreenWidth || point.Y >= Settings.ScreenHeight || point.X + (mi.HasLight? mi.LightWidth : mi.Width) < 0 || point.Y + (mi.HasLight? mi.LightHeight :mi.Height) < 0)
+                return;
+
+            bool oldBlend = DXManager.Blending;
+            DXManager.SetBlend(true, rate);
+
+            DXManager.Sprite.Draw2D(Image, Point.Empty, 0, point, colour);
+
+            DXManager.SetBlend(oldBlend);
+            mi.CleanTime = CMain.Time + Settings.CleanDelay;
+        }
+
+        public void DrawLight(int index, Point point, Color colour, bool offSet = false)
+        {
+            if (!CheckImage(index))
+                return;
+
+            MImage mi = _images[index];
+            Texture Image = mi.HasLight ? mi.LightImage : mi.Image;
+            if (offSet) point.Offset(mi.HasLight ? mi.LightX : mi.X, mi.HasLight ? mi.LightY : mi.Y);
+
+            if (point.X >= Settings.ScreenWidth || point.Y >= Settings.ScreenHeight || point.X + (mi.HasLight ? mi.LightWidth : mi.Width) < 0 || point.Y + (mi.HasLight ? mi.LightHeight : mi.Height) < 0)
+                return;
+
+            DXManager.Sprite.Draw2D(Image, Point.Empty, 0, point, colour);
+
+            mi.CleanTime = CMain.Time + Settings.CleanDelay;
+        }
+
         public bool VisiblePixel(int index, Point point, bool accurate)
         {
             if (!CheckImage(index)) return false;
@@ -810,7 +849,13 @@ namespace Client.MirGraphics
             }
             return output;
         }
+        public Color GetLightColor(int index)
+        {
+            if (!CheckImage(index))
+                return Color.White;
 
+            return _images[index].GetLightColor();
+        }
     }
 
     public sealed class MImage
@@ -828,13 +873,20 @@ namespace Client.MirGraphics
         public Texture MaskImage;
         public Boolean HasMask;
 
+        //layer 3:
+        public  Texture LightImage;
+        public int LightLength;
+        public short LightWidth, LightHeight, LightX, LightY;
+        public Boolean HasLight;
+        private Color LightColor;
+
         public long CleanTime;
         public Size TrueSize;
 
         public unsafe byte* Data;
 
 
-        public MImage(BinaryReader reader)
+        public MImage(BinaryReader reader, int Currentversion)
         {
 
             //read layer 1
@@ -845,6 +897,8 @@ namespace Client.MirGraphics
             ShadowX = reader.ReadInt16();
             ShadowY = reader.ReadInt16();
             Shadow = reader.ReadByte();
+            if (Currentversion >= 3)
+                HasLight = reader.ReadBoolean();
             Length = reader.ReadInt32();
 
             //check if there's a second layer and read it
@@ -858,7 +912,60 @@ namespace Client.MirGraphics
                 MaskY = reader.ReadInt16();
                 MaskLength = reader.ReadInt32();
             }
+            if (Currentversion >= 3)
+            {
+                if (HasLight)
+                {
+                    if (HasMask)
+                        reader.ReadBytes(MaskLength);
+                    else
+                        reader.ReadBytes(Length);
+                    LightColor = Color.FromArgb(reader.ReadInt32());
+                    LightWidth = reader.ReadInt16();
+                    LightHeight = reader.ReadInt16();
+                    LightX = reader.ReadInt16();
+                    LightY = reader.ReadInt16();
+                    LightLength = reader.ReadInt32();
+                }
+            }
+
         }
+
+        public Color GetLightColor()
+        {
+            if (LightColor == Color.Empty)
+                LightColor = AverageColorFromTexture();
+            return LightColor;
+        }
+
+        private unsafe Color AverageColorFromTexture()
+        {
+            if (Data == null) return Color.White;
+            int red = 0, green = 0, blue = 0;
+            bool foundcolor = false;
+            int count = 0;
+            for (int i = 0; i < (Width * Height * 4); i += 4)
+            {
+                if (Data[i + 3] == 0) continue;
+                if ((Data[i] == 0) && (Data[i] == 0) && (Data[i] == 0)) continue;
+                if (!foundcolor)
+                {
+                    foundcolor = true;
+                    red = Data[i+2];
+                    green = Data[i+1];
+                    blue = Data[i];
+                    count++;
+                    continue;
+                }
+                red += Data[i+2];
+                green += Data[i+1];
+                blue += Data[i];
+                count++;
+            }
+            if (count == 0) return Color.White;
+            return Color.FromArgb(255, Convert.ToInt32(red/count), (int)(green/count), (int)(blue/count));
+        }
+
 
         public unsafe void CreateTexture(BinaryReader reader)
         {
@@ -881,18 +988,40 @@ namespace Client.MirGraphics
             if (HasMask)
             {
                 reader.ReadBytes(12);
+                //bad code it should use maskwidth and maskheight!
                 w = Width;// + (4 - Width % 4) % 4;
                 h = Height;// + (4 - Height % 4) % 4;
 
                 MaskImage = new Texture(DXManager.Device, w, h, 1, Usage.None, Format.A8R8G8B8, Pool.Managed);
                 stream = MaskImage.LockRectangle(0, LockFlags.Discard);
-
+                //again why is it assuming maskimage is same length of bytes as normal image?
                 decomp = DecompressImage(reader.ReadBytes(Length));
 
                 stream.Write(decomp, 0, decomp.Length);
 
                 stream.Dispose();
                 MaskImage.UnlockRectangle(0);
+            }
+            if (HasLight)
+            {
+                reader.ReadBytes(16);
+                w = LightWidth;
+                h = LightHeight;
+                //temp
+                decomp = DecompressImage(reader.ReadBytes(LightLength));
+                byte[] data = new byte[4 * LightWidth * LightHeight];
+                for (int i = 0; i < decomp.Length;i++)
+                {
+                    data[i * 4] = decomp[i];
+                    data[(i * 4)+1] = decomp[i];
+                    data[(i * 4)+2] = decomp[i];
+                    data[(i * 4)+3] = decomp[i];
+                }
+                LightImage = new Texture(DXManager.Device, w, h, 1, Usage.None, Format.A8R8G8B8, Pool.Managed);
+                stream = LightImage.LockRectangle(0, LockFlags.Discard);
+                stream.Write(data, 0, data.Length);
+                stream.Dispose();
+                LightImage.UnlockRectangle(0);
             }
 
             DXManager.TextureList.Add(this);

@@ -78,6 +78,10 @@ namespace Client.MirObjects
                 BodyLibrary.Draw(DrawFrame, DrawLocation, DrawColour);
         }
 
+        public override void DrawLight()
+        {
+        }
+
         public override void Process()
         {
             DrawLocation = new Point((CurrentLocation.X - User.Movement.X + MapControl.OffSetX) * MapControl.CellWidth, (CurrentLocation.Y - User.Movement.Y + MapControl.OffSetY) * MapControl.CellHeight);
@@ -151,6 +155,9 @@ namespace Client.MirObjects
             LabelList.Add(NameLabel);
         }
 
-
+        public override Color GetLightColor()
+        {
+            return Color.White;
+        }
     }
 }

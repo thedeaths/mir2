@@ -560,6 +560,10 @@ namespace Client.MirObjects
             Libraries.Prguse.Draw(imageIndex, DrawLocation.Add(offSet).Add(size.Width / 2 - 28, -40), Color.White, false);
         }
 
+        public override void DrawLight()
+        {
+        }
+
         public override bool MouseOver(Point p)
         {
             return MapControl.MapLocation == CurrentLocation || BodyLibrary != null && BodyLibrary.VisiblePixel(DrawFrame, p.Subtract(FinalDrawLocation), false);
@@ -716,5 +720,10 @@ namespace Client.MirObjects
         }
 
         #endregion
+
+        public override Color GetLightColor()
+        {
+            return Color.White;
+        }
     }
 }

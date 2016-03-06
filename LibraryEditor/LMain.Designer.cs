@@ -48,6 +48,7 @@
             this.skinToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.btnMakeLightMask = new System.Windows.Forms.Button();
             this.nudJump = new System.Windows.Forms.NumericUpDown();
             this.checkBoxPreventAntiAliasing = new System.Windows.Forms.CheckBox();
             this.checkBoxQuality = new System.Windows.Forms.CheckBox();
@@ -122,14 +123,14 @@
             this.closeToolStripMenuItem});
             this.fileToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("fileToolStripMenuItem.Image")));
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(53, 20);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(51, 20);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // newToolStripMenuItem
             // 
             this.newToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("newToolStripMenuItem.Image")));
             this.newToolStripMenuItem.Name = "newToolStripMenuItem";
-            this.newToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.newToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.newToolStripMenuItem.Text = "New";
             this.newToolStripMenuItem.ToolTipText = "New .Lib";
             this.newToolStripMenuItem.Click += new System.EventHandler(this.newToolStripMenuItem_Click);
@@ -138,7 +139,7 @@
             // 
             this.openToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("openToolStripMenuItem.Image")));
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.openToolStripMenuItem.Text = "Open";
             this.openToolStripMenuItem.ToolTipText = "Open Shanda or Wemade files.";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
@@ -146,13 +147,13 @@
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(111, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(110, 6);
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("saveToolStripMenuItem.Image")));
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.saveToolStripMenuItem.Text = "Save";
             this.saveToolStripMenuItem.ToolTipText = "Saves currently open .Lib";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
@@ -161,7 +162,7 @@
             // 
             this.saveAsToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("saveAsToolStripMenuItem.Image")));
             this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.saveAsToolStripMenuItem.Text = "Save As";
             this.saveAsToolStripMenuItem.ToolTipText = ".Lib Only.";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
@@ -169,13 +170,13 @@
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(111, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(110, 6);
             // 
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("closeToolStripMenuItem.Image")));
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(113, 22);
             this.closeToolStripMenuItem.Text = "Close";
             this.closeToolStripMenuItem.ToolTipText = "Exit Application.";
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
@@ -189,14 +190,14 @@
             this.convertToolStripMenuItem});
             this.functionsToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("functionsToolStripMenuItem.Image")));
             this.functionsToolStripMenuItem.Name = "functionsToolStripMenuItem";
-            this.functionsToolStripMenuItem.Size = new System.Drawing.Size(87, 20);
+            this.functionsToolStripMenuItem.Size = new System.Drawing.Size(81, 20);
             this.functionsToolStripMenuItem.Text = "Functions";
             // 
             // copyToToolStripMenuItem
             // 
             this.copyToToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("copyToToolStripMenuItem.Image")));
             this.copyToToolStripMenuItem.Name = "copyToToolStripMenuItem";
-            this.copyToToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.copyToToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.copyToToolStripMenuItem.Text = "Copy To..";
             this.copyToToolStripMenuItem.ToolTipText = "Copy to a new .Lib or to the end of an exsisting one.";
             this.copyToToolStripMenuItem.Click += new System.EventHandler(this.copyToToolStripMenuItem_Click);
@@ -205,7 +206,7 @@
             // 
             this.countBlanksToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("countBlanksToolStripMenuItem.Image")));
             this.countBlanksToolStripMenuItem.Name = "countBlanksToolStripMenuItem";
-            this.countBlanksToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.countBlanksToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.countBlanksToolStripMenuItem.Text = "Count Blanks";
             this.countBlanksToolStripMenuItem.ToolTipText = "Counts the blank images in the .Lib";
             this.countBlanksToolStripMenuItem.Click += new System.EventHandler(this.countBlanksToolStripMenuItem_Click);
@@ -216,7 +217,7 @@
             this.safeToolStripMenuItem});
             this.removeBlanksToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("removeBlanksToolStripMenuItem.Image")));
             this.removeBlanksToolStripMenuItem.Name = "removeBlanksToolStripMenuItem";
-            this.removeBlanksToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.removeBlanksToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.removeBlanksToolStripMenuItem.Text = "Remove Blanks";
             this.removeBlanksToolStripMenuItem.ToolTipText = "Quick removal of blanks.";
             this.removeBlanksToolStripMenuItem.Click += new System.EventHandler(this.removeBlanksToolStripMenuItem_Click);
@@ -234,7 +235,7 @@
             // 
             this.convertToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("convertToolStripMenuItem.Image")));
             this.convertToolStripMenuItem.Name = "convertToolStripMenuItem";
-            this.convertToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.convertToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
             this.convertToolStripMenuItem.Text = "Converter";
             this.convertToolStripMenuItem.ToolTipText = "Convert Wil/Wzl/Miz to .Lib";
             this.convertToolStripMenuItem.Click += new System.EventHandler(this.convertToolStripMenuItem_Click);
@@ -244,7 +245,7 @@
             this.skinToolStripMenuItem.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.skinToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("skinToolStripMenuItem.Image")));
             this.skinToolStripMenuItem.Name = "skinToolStripMenuItem";
-            this.skinToolStripMenuItem.Size = new System.Drawing.Size(57, 20);
+            this.skinToolStripMenuItem.Size = new System.Drawing.Size(54, 20);
             this.skinToolStripMenuItem.Text = "Skin";
             this.skinToolStripMenuItem.Visible = false;
             // 
@@ -279,6 +280,7 @@
             // 
             // splitContainer2.Panel1
             // 
+            this.splitContainer2.Panel1.Controls.Add(this.btnMakeLightMask);
             this.splitContainer2.Panel1.Controls.Add(this.nudJump);
             this.splitContainer2.Panel1.Controls.Add(this.checkBoxPreventAntiAliasing);
             this.splitContainer2.Panel1.Controls.Add(this.checkBoxQuality);
@@ -308,6 +310,16 @@
             this.splitContainer2.Size = new System.Drawing.Size(1008, 325);
             this.splitContainer2.SplitterDistance = 240;
             this.splitContainer2.TabIndex = 0;
+            // 
+            // btnMakeLightMask
+            // 
+            this.btnMakeLightMask.Location = new System.Drawing.Point(10, 176);
+            this.btnMakeLightMask.Name = "btnMakeLightMask";
+            this.btnMakeLightMask.Size = new System.Drawing.Size(107, 26);
+            this.btnMakeLightMask.TabIndex = 22;
+            this.btnMakeLightMask.Text = "Make LightMasks";
+            this.btnMakeLightMask.UseVisualStyleBackColor = true;
+            this.btnMakeLightMask.Click += new System.EventHandler(this.btnMakeLightMask_Click);
             // 
             // nudJump
             // 
@@ -404,7 +416,7 @@
             this.ZoomTrackBar.Location = new System.Drawing.Point(42, 248);
             this.ZoomTrackBar.Minimum = 1;
             this.ZoomTrackBar.Name = "ZoomTrackBar";
-            this.ZoomTrackBar.Size = new System.Drawing.Size(147, 45);
+            this.ZoomTrackBar.Size = new System.Drawing.Size(147, 42);
             this.ZoomTrackBar.TabIndex = 4;
             this.ZoomTrackBar.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
             this.ZoomTrackBar.Value = 1;
@@ -625,7 +637,7 @@
             // toolStripStatusLabel
             // 
             this.toolStripStatusLabel.Name = "toolStripStatusLabel";
-            this.toolStripStatusLabel.Size = new System.Drawing.Size(90, 17);
+            this.toolStripStatusLabel.Size = new System.Drawing.Size(85, 17);
             this.toolStripStatusLabel.Text = "Selected Image:";
             // 
             // toolStripProgressBar
@@ -728,6 +740,7 @@
         private System.Windows.Forms.CheckBox checkBoxQuality;
         private System.Windows.Forms.CheckBox checkBoxPreventAntiAliasing;
         private System.Windows.Forms.NumericUpDown nudJump;
+        private System.Windows.Forms.Button btnMakeLightMask;
 
     }
 }

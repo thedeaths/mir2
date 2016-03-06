@@ -3497,7 +3497,7 @@ namespace Client.MirObjects
                 Blend = blend,
                 Skip = skip,
                 Light = lightDistance,
-                LightColour = lightColour == null ? Color.White : (Color)lightColour
+                //LightColour = lightColour == null ? Color.White : (Color)lightColour
             };
 
             Effects.Add(missile);
@@ -4174,6 +4174,10 @@ namespace Client.MirObjects
             DXManager.SetOpacity(oldOpacity);
         }
 
+        public override void DrawLight()
+        {
+        }
+
         public override void DrawBehindEffects(bool effectsEnabled)
         {
             for (int i = 0; i < Effects.Count; i++)
@@ -4494,7 +4498,10 @@ namespace Client.MirObjects
             NameLabel.Location = new Point(DisplayRectangle.X + (50 - NameLabel.Size.Width) / 2, DisplayRectangle.Y - (32 - NameLabel.Size.Height / 2) + (Dead ? 35 : 8)); //was 48 -
             NameLabel.Draw();
         }
-
+        public override Color GetLightColor()
+        {
+            return Color.White;
+        }
     }
 
 

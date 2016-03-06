@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{263074D6-AB8D-4F3C-9CE6-A05405432BCE}"
 EndProject
@@ -76,7 +76,8 @@ Global
 		{3B6D8439-1B92-4383-BBE7-E29A26E8F938}.Release|x64.ActiveCfg = Release|Any CPU
 		{3B6D8439-1B92-4383-BBE7-E29A26E8F938}.Release|x64.Build.0 = Release|Any CPU
 		{3B6D8439-1B92-4383-BBE7-E29A26E8F938}.Release|x86.ActiveCfg = Release|Any CPU
-		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Debug|Any CPU.Build.0 = Debug|x64
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Debug|Mixed Platforms.Build.0 = Debug|x86
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Debug|x64.ActiveCfg = Debug|x64
@@ -84,6 +85,7 @@ Global
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Debug|x86.ActiveCfg = Debug|x86
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Debug|x86.Build.0 = Debug|x86
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Release|Any CPU.ActiveCfg = Release|x86
+		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Release|Any CPU.Build.0 = Release|x86
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Release|Mixed Platforms.ActiveCfg = Release|x86
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Release|Mixed Platforms.Build.0 = Release|x86
 		{A779B96A-AE74-47E7-B0CA-A02B26C1F61E}.Release|x64.ActiveCfg = Release|x64

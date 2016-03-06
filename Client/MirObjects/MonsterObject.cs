@@ -2518,6 +2518,10 @@ namespace Client.MirObjects
             DXManager.SetOpacity(oldOpacity);
         }
 
+        public override void DrawLight()
+        {
+        }
+
 
         public override bool MouseOver(Point p)
         {
@@ -3144,6 +3148,11 @@ namespace Client.MirObjects
             ChatLabel.ForeColour = Dead ? Color.Gray : Color.White;
             ChatLabel.Location = new Point(DisplayRectangle.X + (48 - ChatLabel.Size.Width) / 2, DisplayRectangle.Y - (60 + ChatLabel.Size.Height) - (Dead ? 35 : 0) + yOffset);
             ChatLabel.Draw();
+        }
+
+        public override Color GetLightColor()
+        {
+            return Color.White;
         }
     }
 }

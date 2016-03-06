@@ -8753,7 +8753,6 @@ namespace Client.MirScenes
 
                 Objects[i].DrawDamages();
             }
-            
 
             if (!Settings.Effect) return;
 
@@ -8763,6 +8762,7 @@ namespace Client.MirScenes
 
         private void DrawLights(LightSetting setting)
         {
+            Color LightColor;
             if (DXManager.Lights == null || DXManager.Lights.Count == 0) return;
 
             if (_lightTexture == null || _lightTexture.Disposed)
@@ -8799,7 +8799,7 @@ namespace Client.MirScenes
             DXManager.Device.Clear(ClearFlags.Target, setting == LightSetting.Night ? Darkness : Color.FromArgb(255, 50, 50, 50), 0, 0);
 
             #endregion
-
+            
             int light;
             Point p;
             DXManager.SetBlend(true);
@@ -8819,38 +8819,47 @@ namespace Client.MirScenes
 
                     p = ob.DrawLocation;
 
-                    Color lightColour = ob.LightColour;
-
+                    //Color lightColour = ob.LightColour;
+                    LightColor = Color.White;
                     if (ob.Race == ObjectType.Player)
                     {
                         switch (light / 15)
                         {
                             case 0://no light source
-                                lightColour = Color.FromArgb(255, 60, 60, 60);
+                                LightColor = Color.FromArgb(255, 60, 60, 60);
                                 break;
                             case 1:
-                                lightColour = Color.FromArgb(255, 120, 120, 120);
+                                LightColor = Color.FromArgb(255, 120, 120, 120);
                                 break;
                             case 2://Candle
-                                lightColour = Color.FromArgb(255, 180, 180, 180);
+                                LightColor = Color.FromArgb(255, 180, 180, 180);
                                 break;
                             case 3://Torch
-                                lightColour = Color.FromArgb(255, 240, 240, 240);
+                                LightColor = Color.FromArgb(255, 240, 240, 240);
                                 break;
                             default://Peddler Torch
-                                lightColour = Color.FromArgb(255, 255, 255, 255);
+                                LightColor = Color.FromArgb(255, 255, 255, 255);
                                 break;
                         }
                     }
                     else if (ob.Race == ObjectType.Merchant)
                     {
-                        lightColour = Color.FromArgb(255, 120, 120, 120);
+                        LightColor = Color.FromArgb(255, 120, 120, 120);
                     }
 
+                    else if (ob.Race == ObjectType.Spell)
+                    {
+                        if (Settings.AdvancedLight)
+                        {
+                            ob.DrawLight();
+                            LightColor = ob.GetLightColor();
+                            continue;
+                        }
+                    }
                     if (DXManager.Lights[LightRange] != null && !DXManager.Lights[LightRange].Disposed)
                     {
                         p.Offset(-(DXManager.LightSizes[LightRange].X / 2) - (CellWidth / 2), -(DXManager.LightSizes[LightRange].Y / 2) - (CellHeight / 2) -5);
-                        DXManager.Sprite.Draw2D(DXManager.Lights[LightRange], PointF.Empty, 0, p, lightColour);
+                        DXManager.Sprite.Draw2D(DXManager.Lights[LightRange], PointF.Empty, 0, p, LightColor);
                     }
 
                 }
@@ -8864,21 +8873,30 @@ namespace Client.MirScenes
                     light = effect.Light;
 
                     p = effect.DrawLocation;
+                    if (Settings.AdvancedLight)
+                    {
+                        effect.DrawLight();
+                        LightColor = effect.GetLight();
+                        continue;
+                    }
+                    else
+                        LightColor = Color.White;
 
                     if (DXManager.Lights[light] != null && !DXManager.Lights[light].Disposed)
                     {
                         p.Offset(-(DXManager.LightSizes[light].X / 2) - (CellWidth / 2), -(DXManager.LightSizes[light].Y / 2) - (CellHeight / 2) - 5);
-                        DXManager.Sprite.Draw2D(DXManager.Lights[light], PointF.Empty, 0, p, effect.LightColour);
+                        DXManager.Sprite.Draw2D(DXManager.Lights[light], PointF.Empty, 0, p, LightColor);
                     }
 
                 }
                 #endregion
             }
             #endregion
-
+            
             #region Map Effect Lights
             if (Settings.Effect)
             {
+                
                 for (int e = 0; e < Effects.Count; e++)
                 {
                     Effect effect = Effects[e];
@@ -8888,15 +8906,23 @@ namespace Client.MirScenes
                     if (light == 0) continue;
 
                     p = effect.DrawLocation;
-
+                    if (Settings.AdvancedLight)
+                    {
+                        effect.DrawLight();
+                        LightColor = effect.GetLight();
+                        continue;
+                    }
+                    else
+                        LightColor = Color.White;
                     if (DXManager.Lights[light] != null && !DXManager.Lights[light].Disposed)
                     {
                         p.Offset(-(DXManager.LightSizes[light].X / 2) - (CellWidth / 2), -(DXManager.LightSizes[light].Y / 2) - (CellHeight / 2) - 5);
-                        DXManager.Sprite.Draw2D(DXManager.Lights[light], PointF.Empty, 0, p, Color.White);
+                        DXManager.Sprite.Draw2D(DXManager.Lights[light], PointF.Empty, 0, p, LightColor);
                     }
                 }
             }
             #endregion
+            
 
             #region Map Lights
             for (int y = MapObject.User.Movement.Y - ViewRangeY - 24; y <= MapObject.User.Movement.Y + ViewRangeY + 24; y++)
@@ -8955,7 +8981,7 @@ namespace Client.MirScenes
                 }
             }
             #endregion
-
+            //*/
             DXManager.SetBlend(false);
             DXManager.SetSurface(oldSurface);
 

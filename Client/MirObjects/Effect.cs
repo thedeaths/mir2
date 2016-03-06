@@ -18,12 +18,13 @@ namespace Client.MirObjects
 
         public int CurrentFrame;
         public long NextFrame;
+        public int Index;
 
         public Point Source;
         public MapObject Owner;
 
         public int Light = 6;
-        public Color LightColour = Color.White;
+        //public Color LightColour = Color.White;
 
         public bool Blend = true;
         public float Rate = 1F;
@@ -128,17 +129,46 @@ namespace Client.MirObjects
                 DrawLocation.Offset(MapObject.User.OffSetMove);
             }
 
-
+            Index = BaseIndex + CurrentFrame;
             if (Blend)
-                Library.DrawBlend(BaseIndex + CurrentFrame, DrawLocation, Color.White, true, Rate);
+                Library.DrawBlend(Index, DrawLocation, Color.White, true, Rate);
             else
-                Library.Draw(BaseIndex + CurrentFrame, DrawLocation, Color.White, true);
+                Library.Draw(Index, DrawLocation, Color.White, true);
         }
 
         public void Clear()
         {
             Complete = null;
             Played = null;
+        }
+
+        public virtual void DrawLight()
+        {
+            if (CMain.Time < Start) return;
+
+            if (Owner != null)
+            {
+                DrawLocation = Owner.DrawLocation;
+            }
+            else
+            {
+                DrawLocation = new Point((Source.X - MapObject.User.Movement.X + MapControl.OffSetX) * MapControl.CellWidth,
+                                         (Source.Y - MapObject.User.Movement.Y + MapControl.OffSetY) * MapControl.CellHeight);
+                DrawLocation.Offset(MapObject.User.OffSetMove);
+            }
+
+            Index = BaseIndex + CurrentFrame;
+            if (Blend)
+                Library.DrawLightBlend(Index, DrawLocation, GetLight(), true, Rate);
+            else
+                Library.DrawLight(Index, DrawLocation, GetLight(), true);
+        }
+
+        public Color GetLight()
+        {
+            if (Library == null) return Color.White;
+            if (Library.GetSize(Index) == Size.Empty) return Color.White;
+            return Library.GetLightColor(Index);
         }
     }
 
@@ -201,7 +231,7 @@ namespace Client.MirObjects
             if (CMain.Time < Start) return;
 
 
-            int index = BaseIndex + (CurrentFrame % FrameCount) + Direction * (Skip + FrameCount);
+            Index = BaseIndex + (CurrentFrame % FrameCount) + Direction * (Skip + FrameCount);
 
             DrawLocation = new Point((Source.X - MapObject.User.Movement.X + MapControl.OffSetX) * MapControl.CellWidth,
                                        (Source.Y - MapObject.User.Movement.Y + MapControl.OffSetY) * MapControl.CellHeight);
@@ -214,9 +244,31 @@ namespace Client.MirObjects
             DrawLocation.Offset(x * CurrentFrame / Count, y * CurrentFrame / Count);
 
             if (!Blend)
-                Library.Draw(index, DrawLocation, Color.White, true);
+                Library.Draw(Index, DrawLocation, Color.White, true);
             else
-                Library.DrawBlend(index, DrawLocation, Color.White, true, Rate);
+                Library.DrawBlend(Index, DrawLocation, Color.White, true, Rate);
+        }
+        public override void DrawLight()
+        {
+            if (CMain.Time < Start) return;
+
+
+            Index = BaseIndex + (CurrentFrame % FrameCount) + Direction * (Skip + FrameCount);
+
+            DrawLocation = new Point((Source.X - MapObject.User.Movement.X + MapControl.OffSetX) * MapControl.CellWidth,
+                                       (Source.Y - MapObject.User.Movement.Y + MapControl.OffSetY) * MapControl.CellHeight);
+            DrawLocation.Offset(MapObject.User.OffSetMove);
+
+            int x = (Destination.X - Source.X) * MapControl.CellWidth;
+            int y = (Destination.Y - Source.Y) * MapControl.CellHeight;
+
+
+            DrawLocation.Offset(x * CurrentFrame / Count, y * CurrentFrame / Count);
+
+            if (!Blend)
+                Library.DrawLight(Index, DrawLocation, GetLight(), true);
+            else
+                Library.DrawLightBlend(Index, DrawLocation, GetLight(), true, Rate);
         }
 
     }
@@ -256,6 +308,18 @@ namespace Client.MirObjects
                 noProcess = false;
             if (!noProcess)
                 base.Draw();
+        }
+
+        public override void DrawLight()
+        {
+            if (!((PlayerObject)Owner).Concentrating)
+                Remove();
+            else if (((PlayerObject)Owner).ConcentrateInterrupted)
+                noProcess = true;
+            else
+                noProcess = false;
+            if (!noProcess)
+                base.DrawLight();
         }
 
         public static int GetOwnerEffectID(uint objectID)
@@ -319,6 +383,14 @@ namespace Client.MirObjects
                 Remove();
             base.Draw();
         }
+        public override void DrawLight()
+        {
+            if (!((PlayerObject)Owner).HasElements)
+                Remove();
+            if (((PlayerObject)Owner).ElementsLevel >= killAt && myType < 4)
+                Remove();
+            base.DrawLight();
+        }
     }
 
     public class DelayedExplosionEffect : Effect
@@ -358,6 +430,16 @@ namespace Client.MirObjects
                 return;
             }
             base.Draw();
+        }
+
+        public override void DrawLight()
+        {
+            if (Owner.Dead)
+            {
+                Remove();
+                return;
+            }
+            base.DrawLight();
         }
 
         public static int GetOwnerEffectID(uint objectID)
@@ -467,14 +549,14 @@ namespace Client.MirObjects
             : base(null, 0, 0, duration, owner, starttime)
         {
             Light = lightDistance;
-            LightColour = lightColour == null ? Color.White : (Color)lightColour;
+            //LightColour = lightColour == null ? Color.White : (Color)lightColour;
         }
 
         public LightEffect(int duration, Point source, long starttime = 0, int lightDistance = 6, Color? lightColour = null)
             : base(null, 0, 0, duration, source, starttime)
         {
             Light = lightDistance;
-            LightColour = lightColour == null ? Color.White : (Color)lightColour;
+            //LightColour = lightColour == null ? Color.White : (Color)lightColour;
         }
 
         public override void Process()

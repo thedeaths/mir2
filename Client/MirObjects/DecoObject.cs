@@ -49,6 +49,10 @@ namespace Client.MirObjects
             BodyLibrary.Draw(Image, DrawLocation, DrawColour, true);
         }
 
+        public override void DrawLight()
+        {
+        }
+
         public override bool MouseOver(Point p)
         {
             return false;
@@ -60,6 +64,10 @@ namespace Client.MirObjects
 
         public override void DrawEffects(bool effectsEnabled)
         {
+        }
+        public override Color GetLightColor()
+        {
+            return Color.White;
         }
     }
 }

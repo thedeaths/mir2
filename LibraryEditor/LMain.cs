@@ -882,5 +882,23 @@ namespace LibraryEditor
                 e.SuppressKeyPress = true;
             }
         }
+
+        private void btnMakeLightMask_Click(object sender, EventArgs e)
+        {
+            if (_library == null) return;
+            _library.GenerateLightMasks();
+            return;
+            if (PreviewListView.SelectedIndices.Count == 0)
+            {
+                return;
+            }
+
+            _selectedImage = _library.GetMImage(PreviewListView.SelectedIndices[0]);
+            if (_selectedImage == null)
+            {
+                return;
+            }
+            ImageBox.Image = _selectedImage.GetLightImage();
+        }
     }
 }

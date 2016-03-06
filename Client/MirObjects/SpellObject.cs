@@ -168,6 +168,7 @@ namespace Client.MirObjects
                 if (++FrameIndex >= FrameCount && Repeat)
                     FrameIndex = 0;
                 NextMotion = CMain.Time + FrameInterval;
+                LightColour = Color.Empty;
             }
 
             DrawLocation = new Point((CurrentLocation.X - User.Movement.X + MapControl.OffSetX) * MapControl.CellWidth, (CurrentLocation.Y - User.Movement.Y + MapControl.OffSetY) * MapControl.CellHeight);
@@ -179,11 +180,20 @@ namespace Client.MirObjects
         {
             if (FrameIndex >= FrameCount && !Repeat) return;
             if (BodyLibrary == null) return;
-
             if (Blend)
                 BodyLibrary.DrawBlend(DrawFrame + FrameIndex, DrawLocation, DrawColour, true, 0.8F);
             else
                 BodyLibrary.Draw(DrawFrame + FrameIndex, DrawLocation, DrawColour, true);
+        }
+
+        public override void DrawLight()
+        {
+            if (FrameIndex >= FrameCount && !Repeat) return;
+            if (BodyLibrary == null) return;
+            if (Blend)
+                BodyLibrary.DrawLightBlend(DrawFrame + FrameIndex, DrawLocation, GetLightColor(), true, 0.8F);
+            else
+                BodyLibrary.DrawLight(DrawFrame + FrameIndex, DrawLocation, GetLightColor(), true);
         }
 
         public override bool MouseOver(Point p)
@@ -198,5 +208,19 @@ namespace Client.MirObjects
         public override void DrawEffects(bool effectsEnabled)
         { 
         }
+        public override Color GetLightColor()
+        {
+            if (LightColour == Color.Empty)
+                LightColour = GetLight();
+            return LightColour;
+        }
+
+        private Color GetLight()
+        {
+            if (BodyLibrary == null) return Color.White;
+            if (BodyLibrary.GetSize(DrawFrame + FrameIndex) == Size.Empty) return Color.White;
+            return BodyLibrary.GetLightColor(DrawFrame + FrameIndex);
+        }
+
     }
 }

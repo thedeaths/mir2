@@ -126,7 +126,8 @@ namespace Client
             TransparentChat = false,
             DuraView = false,
             DisplayDamage = true,
-            TargetDead = false;
+            TargetDead = false,
+            AdvancedLight = true;
 
         public static int[,] SkillbarLocation = new int[2, 2];
         //Quests
@@ -213,6 +214,7 @@ namespace Client
             DisplayDamage = Reader.ReadBoolean("Game", "DisplayDamage", DisplayDamage);
             TargetDead = Reader.ReadBoolean("Game", "TargetDead", TargetDead);
             DuraView = Reader.ReadBoolean("Game", "DuraWindow", DuraView);
+            AdvancedLight = Reader.ReadBoolean("Game", "AdvancedLight", AdvancedLight);
 
             for (int i = 0; i < SkillbarLocation.Length / 2; i++)
             {
@@ -284,6 +286,7 @@ namespace Client
             Reader.Write("Game", "DisplayDamage", DisplayDamage);
             Reader.Write("Game", "TargetDead", TargetDead);
             Reader.Write("Game", "DuraWindow", DuraView);
+            Reader.Write("Game", "AdvancedLight", AdvancedLight);
 
             for (int i = 0; i < SkillbarLocation.Length / 2; i++)
             {
